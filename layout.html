@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDFMitra - Your Document Assistant</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* PDFMitra Brand Colors */
+            --primary: #00897b;
+            /* Teal Green - Safe & Friendly */
+            --primary-dark: #00695c;
+            --accent: #fb8c00;
+            /* Orange - Energy */
+            --bg: #f0fdfa;
+            /* Very light teal bg */
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --card-bg: #ffffff;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            background: #ffffff;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            font-size: 32px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .logo .mitra {
+            color: var(--accent);
+        }
+
+        .nav-search-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-search-input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav-search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(0, 137, 123, 0.05);
+        }
+
+        .nav-search-icon {
+            position: absolute;
+            left: 15px;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            flex-shrink: 0;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: 15px;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* MAIN CONTENT AREA - Where partials load */
+        #app-content {
+            flex: 1;
+            /* Tools usually handle their own container/padding, but we ensure it takes space */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- FOOTER --- */
+        .site-footer {
+            margin-top: auto;
+            text-align: center;
+        }
+
+        .footer-trust-strip {
+            background: #111827;
+            color: white;
+            padding: 40px 20px;
+        }
+
+        .footer-main {
+            background: #004d40;
+            color: white;
+            padding: 60px 20px;
+        }
+
+        .footer-logo-lg {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer-nav {
+            margin: 20px 0;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .footer-nav a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-nav a:hover {
+            color: white;
+        }
+
+        .footer-nav a.highlight {
+            color: #fb8c00;
+        }
+
+        .heart {
+            color: #fb8c00;
+            animation: beat 1s infinite;
+        }
+
+        @keyframes beat {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 850px) {
+            .navbar {
+                padding: 15px 20px;
+                flex-wrap: wrap;
+            }
+
+            .nav-search-wrapper {
+                order: 3;
+                max-width: 100%;
+                margin-top: 10px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <a href="index.html" class="logo">
+            <i class="fas fa-hands-helping logo-icon"></i>
+            <div>PDF<span class="mitra">Mitra</span></div>
+        </a>
+
+        <div class="nav-search-wrapper">
+            <i class="fas fa-search nav-search-icon"></i>
+            <input type="text" class="nav-search-input" placeholder="Quick find tools..."
+                onkeyup="if(event.key === 'Enter') window.location.href='index.html?search=' + encodeURIComponent(this.value)">
+        </div>
+
+        <div class="nav-links">
+            <a href="index.html">All Tools</a>
+            <a href="layout.html?page=about">About Us</a>
+            <a href="blog/index.html">Blog</a>
+        </div>
+    </nav>
+
+
+    <!-- CONTENT PLACEHOLDER -->
+    <main id="app-content">
+        <!-- Dynamic content will be loaded here -->
+        <noscript>
+            <div style="padding: 50px; text-align: center;">
+                <h2>JavaScript Disabled</h2>
+                <p>This application requires JavaScript to function properly.</p>
+            </div>
+        </noscript>
+    </main>
+
+    <!-- SINGLE GLOBAL FOOTER -->
+    <footer class="site-footer">
+        <!-- Trust Strip -->
+        <div class="footer-trust-strip">
+            <div
+                style="font-size: 20px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <i class="fas fa-shield-alt" style="color: #00897b;"></i>
+                <span>PDF<span style="color: #fb8c00;">Mitra</span></span>
+            </div>
+            <p style="font-weight: 500; opacity: 0.9;">Your Privacy, Our Priority. Made with <span
+                    style="color: #fb8c00;">🧡</span> in India.</p>
+        </div>
+
+        <!-- Main Footer -->
+        <div class="footer-main">
+            <div class="footer-logo-lg">
+                <i class="fas fa-hands-helping" style="color: #00897b;"></i>
+                <span>PDF<span style="color: #fb8c00;">Mitra</span></span>
+            </div>
+
+            <div class="footer-nav">
+                <a href="layout.html?page=about">About Us</a>
+                <a href="layout.html?page=privacy">Privacy Policy</a>
+                <a href="layout.html?page=donate" class="highlight">Donate</a>
+            </div>
+
+            <p>Made with <i class="fas fa-heart" style="color: #fb8c00;"></i> in India.</p>
+            <p style="font-size: 12px; margin-top: 15px; opacity: 0.6;">© 2026 PDFMitra. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- ROUTER SCRIPT -->
+    <script src="js/router.js"></script>
+
+</body>
+
+</html>

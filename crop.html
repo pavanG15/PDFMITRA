@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop PDF - PDFMitra</title>
+    <!-- Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        .crop-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            width: 100%;
+        }
+
+        .preview-pane {
+            background: #e2e8f0;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        #cropCanvas {
+            background: white;
+            box-shadow: var(--shadow);
+            max-width: 95%;
+            max-height: 95%;
+        }
+
+        #cropOverlay {
+            position: absolute;
+            border: 2px solid var(--primary);
+            background: rgba(37, 99, 235, 0.1);
+            cursor: move;
+        }
+
+        .crop-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            z-index: 10;
+        }
+
+        .nw {
+            top: -6px;
+            left: -6px;
+            cursor: nw-resize;
+        }
+
+        .ne {
+            top: -6px;
+            right: -6px;
+            cursor: ne-resize;
+        }
+
+        .sw {
+            bottom: -6px;
+            left: -6px;
+            cursor: sw-resize;
+        }
+
+        .se {
+            bottom: -6px;
+            right: -6px;
+            cursor: se-resize;
+        }
+
+        .controls-pane {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+
+        .btn-crop {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .upload-overlay {
+            position: fixed;
+            inset: 0;
+            background: #f8fafc;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cropUpload" class="upload-overlay">
+        <div style="text-align:center; background:white; padding:60px; border-radius:30px; border:3px dashed var(--border); cursor:pointer;"
+            onclick="document.getElementById('cropFileInput').click()">
+            <div style="font-size:60px; color:var(--primary); margin-bottom:20px;"><i class="fas fa-crop-alt"></i></div>
+            <h2>Crop PDF Margins</h2>
+            <button class="btn-crop" style="width:auto; padding:12px 30px;">Select PDF File</button>
+            <input type="file" id="cropFileInput" accept="application/pdf" style="display: none;">
+        </div>
+    </div>
+    <div class="crop-container">
+        <div class="preview-area">
+            <div class="preview-pane">
+                <canvas id="cropCanvas"></canvas>
+                <div id="cropOverlay" style="display:none;">
+                    <div class="crop-handle nw"></div>
+                    <div class="crop-handle ne"></div>
+                    <div class="crop-handle sw"></div>
+                    <div class="crop-handle se"></div>
+                </div>
+            </div>
+            <div style="text-align:center; margin-top:20px; font-weight:700;">
+                <button onclick="changePag(-1)" style="padding:5px 15px;">Prev</button>
+                <span id="pageInfo">Page 1 of X</span>
+                <button onclick="changePag(1)" style="padding:5px 15px;">Next</button>
+            </div>
+        </div>
+        <div class="controls-pane">
+            <h3 style="margin-bottom:20px;">Settings</h3>
+            <div style="margin-bottom:20px;">
+                <label style="font-size:12px; display:block; margin-bottom:5px;">Crop Box (W x H)</label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <input type="text" id="cropW" readonly style="width:100%; padding:8px;">
+                    <input type="text" id="cropH" readonly style="width:100%; padding:8px;">
+                </div>
+            </div>
+            <button class="btn-crop" id="cropDownloadBtn">Download Cropped PDF</button>
+        </div>
+    </div>
+    <script src="js/ui-core.js"></script>
+    <script>
+        (function () {
+            const { PDFDocument } = PDFLib;
+            let originalBytes = null, docJs = null, cur = 1, total = 0, pW = 0, pH = 0;
+            let rect = { x: 50, y: 50, w: 200, h: 200 }, isDrag = false, sx, sy;
+            const canvas = document.getElementById('cropCanvas'), overlay = document.getElementById('cropOverlay');
+
+            document.getElementById('cropFileInput').onchange = async e => {
+                const file = e.target.files[0]; if (!file) return;
+                originalBytes = await file.arrayBuffer();
+                docJs = await pdfjsLib.getDocument({ data: originalBytes.slice(0) }).promise;
+                total = docJs.numPages;
+                document.getElementById('cropUpload').style.display = 'none';
+                overlay.style.display = 'block';
+                await render(1);
+            };
+            async function render(n) {
+                cur = n; const p = await docJs.getPage(n), vp = p.getViewport({ scale: 1.0 });
+                canvas.width = vp.width; canvas.height = vp.height; pW = vp.width; pH = vp.height;
+                await p.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+                document.getElementById('pageInfo').innerText = `Page ${cur} of ${total}`;
+                updateUI();
+            }
+            window.changePag = (d) => { const n = cur + d; if (n > 0 && n <= total) render(n); };
+            function updateUI() {
+                overlay.style.left = canvas.offsetLeft + rect.x + 'px'; overlay.style.top = canvas.offsetTop + rect.y + 'px';
+                overlay.style.width = rect.w + 'px'; overlay.style.height = rect.h + 'px';
+                document.getElementById('cropW').value = Math.round(rect.w); document.getElementById('cropH').value = Math.round(rect.h);
+            }
+            overlay.onmousedown = e => { isDrag = true; sx = e.clientX; sy = e.clientY; };
+            window.onmousemove = e => {
+                if (!isDrag) return;
+                const dx = e.clientX - sx, dy = e.clientY - sy;
+                rect.x = Math.max(0, Math.min(pW - rect.w, rect.x + dx));
+                rect.y = Math.max(0, Math.min(pH - rect.h, rect.y + dy));
+                sx = e.clientX; sy = e.clientY; updateUI();
+            };
+            window.onmouseup = () => isDrag = false;
+            document.getElementById('cropDownloadBtn').onclick = async () => {
+                const pd = await PDFDocument.load(originalBytes);
+                const pages = pd.getPages(), testP = pages[cur - 1], { width: pw, height: ph } = testP.getSize();
+                const sfX = pw / pW, sfY = ph / pH;
+                const cx = rect.x * sfX, cy = (pH - (rect.y + rect.h)) * sfY, cw = rect.w * sfX, ch = rect.h * sfY;
+                pages.forEach(p => p.setCropBox(cx, cy, cw, ch));
+                const b = new Blob([await pd.save()], { type: 'application/pdf' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'cropped.pdf'; a.click();
+            };
+        })();
+    </script>
+</body>
+
+</html>

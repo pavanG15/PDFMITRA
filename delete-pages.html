@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete PDF Pages - PDFMitra</title>
+    <!-- Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        .delete-container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            border: 2px dashed var(--border);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        #thumbGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .page-card {
+            background: white;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: var(--shadow);
+            border: 2px solid transparent;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .page-card.to-delete {
+            opacity: 0.4;
+            border-color: var(--danger);
+            background: #fff5f5;
+        }
+
+        .thumb-box {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .delete-icon {
+            position: absolute;
+            color: var(--danger);
+            font-size: 30px;
+            display: none;
+        }
+
+        .to-delete .delete-icon {
+            display: block;
+        }
+
+        .action-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 20px;
+            display: none;
+            justify-content: center;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-delete {
+            background: var(--danger);
+            color: white;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="delete-container">
+        <h1>Delete PDF Pages</h1>
+        <div id="delDropZone" class="upload-section" onclick="document.getElementById('delFileInput').click()">
+            <i class="fas fa-trash-alt" style="font-size:50px; color:var(--danger); margin-bottom:15px;"></i>
+            <h3>Select PDF to Remove Pages</h3>
+            <input type="file" id="delFileInput" accept="application/pdf" style="display: none;">
+        </div>
+        <div id="thumbGrid"></div>
+        <div class="action-footer" id="delFooter">
+            <button class="btn-delete" id="delBtn">Delete Selected Pages</button>
+        </div>
+    </div>
+    <script src="js/ui-core.js"></script>
+    <script>
+        (function () {
+            const { PDFDocument } = PDFLib;
+            let originalBytes = null, fileName = "", deleted = new Set();
+            const fileInput = document.getElementById('delFileInput');
+            fileInput.onchange = e => handleFile(e.target.files[0]);
+            async function handleFile(file) {
+                if (!file) return; fileName = file.name;
+                originalBytes = await file.arrayBuffer();
+                document.getElementById('delDropZone').style.display = 'none';
+                document.getElementById('delFooter').style.display = 'flex';
+                const pdf = await pdfjsLib.getDocument({ data: originalBytes.slice(0) }).promise;
+                const grid = document.getElementById('thumbGrid'); grid.innerHTML = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i), vp = page.getViewport({ scale: 0.2 });
+                    const c = document.createElement('canvas'), cx = c.getContext('2d');
+                    c.width = vp.width; c.height = vp.height; await page.render({ canvasContext: cx, viewport: vp }).promise;
+                    const card = document.createElement('div'); card.className = 'page-card';
+                    card.innerHTML = `<div class="thumb-box"><img src="${c.toDataURL()}"><i class="fas fa-times delete-icon"></i></div><div style="margin-top:5px; font-weight:600;">Page ${i}</div>`;
+                    card.onclick = () => { if (deleted.has(i - 1)) { deleted.delete(i - 1); card.classList.remove('to-delete'); } else { deleted.add(i - 1); card.classList.add('to-delete'); } };
+                    grid.appendChild(card);
+                }
+            }
+            document.getElementById('delBtn').onclick = async () => {
+                const pd = await PDFDocument.load(originalBytes);
+                const kept = Array.from({ length: pd.getPageCount() }, (_, i) => i).filter(i => !deleted.has(i));
+                if (kept.length === 0) return alert("Cannot delete all pages");
+                const nd = await PDFDocument.create();
+                (await nd.copyPages(pd, kept)).forEach(p => nd.addPage(p));
+                const b = new Blob([await nd.save()], { type: 'application/pdf' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = fileName.replace('.pdf', '_deleted.pdf'); a.click();
+                location.reload();
+            };
+        })();
+    </script>
+</body>
+
+</html>

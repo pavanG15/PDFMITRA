@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotate PDF - PDFMitra</title>
+    <!-- Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        .rotate-container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .upload-section {
+            background: #fff;
+            padding: 60px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            border: 2px dashed var(--border);
+            cursor: pointer;
+        }
+
+        .action-bar {
+            display: none;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            position: sticky;
+            top: 90px;
+            z-index: 50;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #thumbnailGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .page-card {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: var(--shadow);
+            position: relative;
+            border: 2px solid transparent;
+            text-align: center;
+        }
+
+        .page-card.selected {
+            border-color: var(--primary);
+            background: #f0fdfa;
+        }
+
+        .page-thumb-container {
+            width: 100%;
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .page-num-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .rotate-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="rotate-container">
+        <h1>Rotate PDF</h1>
+        <div class="upload-section" id="rotateDropZone" onclick="document.getElementById('rotateFileInput').click()">
+            <div style="font-size:50px; color:var(--primary);"><i class="fas fa-sync-alt"></i></div>
+            <h3>Click to upload or Drag & Drop</h3>
+            <input type="file" id="rotateFileInput" accept="application/pdf" style="display: none;">
+        </div>
+        <div class="action-bar" id="rotateActionBar">
+            <button class="rotate-btn" style="background:var(--primary); color:white; font-weight:700;"
+                id="rotateGenerateBtn">Download PDF</button>
+        </div>
+        <div id="thumbnailGrid"></div>
+    </div>
+    <script src="js/ui-core.js"></script>
+    <script>
+        (function () {
+            const { PDFDocument, degrees } = PDFLib;
+            let originalBytes = null, fileName = "", rotations = [];
+            const fileInput = document.getElementById('rotateFileInput');
+            fileInput.onchange = e => handleFile(e.target.files[0]);
+            async function handleFile(file) {
+                if (!file) return; fileName = file.name;
+                originalBytes = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: originalBytes.slice(0) }).promise;
+                rotations = Array(pdf.numPages).fill(0);
+                document.getElementById('rotateDropZone').style.display = 'none';
+                document.getElementById('rotateActionBar').style.display = 'flex';
+                const grid = document.getElementById('thumbnailGrid'); grid.innerHTML = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i), vp = page.getViewport({ scale: 0.4 });
+                    const c = document.createElement('canvas'), cx = c.getContext('2d');
+                    c.width = vp.width; c.height = vp.height; await page.render({ canvasContext: cx, viewport: vp }).promise;
+                    const card = document.createElement('div'); card.className = 'page-card';
+                    card.innerHTML = `<div class="page-num-badge">${i}</div><div class="page-thumb-container"><img id="thumb-${i - 1}" src="${c.toDataURL()}" style="max-width:90%; transition:0.3s;"></div><div style="display:flex; gap:5px; margin-top:10px;"><button class="rotate-btn" onclick="rotate(${i - 1}, -90)">-90°</button><button class="rotate-btn" onclick="rotate(${i - 1}, 90)">+90°</button></div>`;
+                    grid.appendChild(card);
+                }
+            }
+            window.rotate = (idx, deg) => {
+                rotations[idx] = (rotations[idx] + deg + 360) % 360;
+                document.getElementById(`thumb-${idx}`).style.transform = `rotate(${rotations[idx]}deg)`;
+            };
+            document.getElementById('rotateGenerateBtn').onclick = async () => {
+                const pd = await PDFDocument.load(originalBytes);
+                pd.getPages().forEach((p, i) => p.setRotation(degrees((p.getRotation().angle + rotations[i]) % 360)));
+                const b = new Blob([await pd.save()], { type: 'application/pdf' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = fileName.replace('.pdf', '_rotated.pdf'); a.click();
+            };
+        })();
+    </script>
+</body>
+
+</html>

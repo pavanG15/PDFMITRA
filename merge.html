@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merge PDF - PDFMitra</title>
+  <!-- Libraries -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+  <style>
+    .merge-container {
+      flex: 1;
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .card {
+      background: #fff;
+      padding: 40px;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .card h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      color: var(--text-light);
+      margin-bottom: 30px;
+    }
+
+    .upload-box {
+      border: 2px dashed var(--primary);
+      padding: 30px;
+      border-radius: 16px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.3s;
+    }
+
+    .upload-box:hover {
+      background: rgba(0, 137, 123, 0.05);
+    }
+
+    .upload-box span {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    #pdfFiles {
+      display: none;
+    }
+
+    .file-list {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+    }
+
+    .file-item {
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .file-item canvas {
+      width: 100%;
+      border-radius: 4px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 10px;
+    }
+
+    .file-name {
+      font-size: 13px;
+      font-weight: 600;
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+
+    .remove-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .btn-primary {
+      margin-top: 30px;
+      padding: 15px 40px;
+      border-radius: 50px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 15px -3px rgba(0, 137, 123, 0.3);
+    }
+  </style>
+</head>
+
+<body>
+  <main class="merge-container">
+    <div class="card">
+      <h1>Merge PDF</h1>
+      <p>Combine multiple PDF files into one unified document.</p>
+      <label class="upload-box">
+        <input type="file" id="pdfFiles" accept="application/pdf" multiple onchange="handleFiles()">
+        <span><i class="fas fa-file-pdf"></i> Choose PDF Files</span>
+      </label>
+      <div class="file-list" id="fileList"></div>
+      <button class="btn-primary" onclick="mergePDFs()">Merge & Download PDF</button>
+    </div>
+  </main>
+
+  <script src="js/ui-core.js"></script>
+  <script>
+    (function () {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      let selectedFiles = [];
+      window.handleFiles = async function () {
+        const files = document.getElementById("pdfFiles").files;
+        selectedFiles = [...selectedFiles, ...Array.from(files)];
+        renderList();
+      }
+      async function renderList() {
+        const list = document.getElementById("fileList");
+        list.innerHTML = "";
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          try {
+            const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+            const page = await pdf.getPage(1);
+            const vp = page.getViewport({ scale: 0.3 });
+            canvas.width = vp.width;
+            canvas.height = vp.height;
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+          } catch (e) { console.error(e); }
+          const div = document.createElement("div");
+          div.className = "file-item";
+          div.innerHTML = `<div class="file-name">${file.name}</div><button class="remove-btn" onclick="removeFile(${i})">Remove</button>`;
+          div.prepend(canvas);
+          list.appendChild(div);
+        }
+      }
+      window.removeFile = function (i) { selectedFiles.splice(i, 1); renderList(); }
+      window.mergePDFs = async function () {
+        if (selectedFiles.length < 2) { alert("Please select at least 2 PDF files"); return; }
+        try {
+          const mergedPdf = await PDFLib.PDFDocument.create();
+          for (const file of selectedFiles) {
+            const bytes = await file.arrayBuffer();
+            const pdf = await PDFLib.PDFDocument.load(bytes);
+            const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+            pages.forEach(p => mergedPdf.addPage(p));
+          }
+          const mergedBytes = await mergedPdf.save();
+          const blob = new Blob([mergedBytes], { type: "application/pdf" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "merged.pdf";
+          a.click();
+        } catch (err) { alert("Merge error: " + err.message); }
+      }
+    })();
+  </script>
+</body>
+
+</html>

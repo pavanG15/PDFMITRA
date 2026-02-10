@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protect PDF - PDFMitra</title>
+    <!-- Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        .protect-container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .tool-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .upload-section {
+            background: #fff;
+            padding: 50px 30px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            border: 2px dashed var(--border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .upload-btn {
+            background: var(--primary);
+            color: white;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-weight: 600;
+            border: none;
+        }
+
+        .settings-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        .password-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .password-group input {
+            width: 100%;
+            padding: 14px 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .strength-meter {
+            height: 4px;
+            border-radius: 2px;
+            background: #e2e8f0;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+        }
+
+        .protect-btn {
+            background: var(--primary);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .overlay-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="protect-container">
+        <div class="tool-header">
+            <h1>Protect PDF</h1>
+            <p>Secure your documents with strong encryption and passwords.</p>
+        </div>
+        <div class="upload-section" id="protectDropZone" onclick="document.getElementById('protectFileInput').click()">
+            <div style="font-size:50px; color:var(--primary); margin-bottom:15px;"><i class="fas fa-lock"></i></div>
+            <p style="margin-bottom: 20px; font-weight: 600;">Drag & Drop PDF or Click to Upload</p>
+            <button class="upload-btn">Select PDF File</button>
+            <input type="file" id="protectFileInput" accept="application/pdf" style="display: none;">
+        </div>
+        <div class="settings-card" id="protectSettingsArea">
+            <h3 style="margin-bottom:20px;">Set Password</h3>
+            <div class="password-group">
+                <input type="password" id="protectUserPassword" placeholder="Enter password to encrypt...">
+            </div>
+            <div class="password-group">
+                <input type="password" id="protectConfirmPassword" placeholder="Confirm password...">
+            </div>
+            <div class="strength-meter">
+                <div class="strength-bar" id="protectStrengthBar"></div>
+            </div>
+            <button class="protect-btn" id="protectStartBtn" disabled style="margin-top:20px;">Protect PDF</button>
+        </div>
+        <div class="overlay-card" id="protectResultsArea">
+            <div style="font-size: 60px; color: #10b981; margin-bottom: 20px;"><i class="fas fa-check-circle"></i></div>
+            <h2>Protection Complete!</h2>
+            <button class="upload-btn" id="protectDownloadBtn"
+                style="background:var(--accent); margin-top:20px; padding:15px 45px;">Download Protected PDF</button>
+            <br>
+            <button class="upload-btn" onclick="location.reload()"
+                style="background:transparent; color:var(--text-light); border:1px solid var(--border); margin-top:20px;">Reset</button>
+        </div>
+    </div>
+    <script src="js/ui-core.js"></script>
+    <script>
+        (function () {
+            const { PDFDocument } = PDFLib;
+            let originalBytes = null, fileName = "";
+            const fileInput = document.getElementById('protectFileInput');
+            fileInput.onchange = e => {
+                const file = e.target.files[0]; if (!file) return;
+                fileName = file.name;
+                const r = new FileReader(); r.onload = e => {
+                    originalBytes = e.target.result;
+                    document.getElementById('protectDropZone').style.display = 'none';
+                    document.getElementById('protectSettingsArea').style.display = 'block';
+                }; r.readAsArrayBuffer(file);
+            };
+            const p1 = document.getElementById('protectUserPassword'), p2 = document.getElementById('protectConfirmPassword'), btn = document.getElementById('protectStartBtn');
+            const validate = () => {
+                btn.disabled = !(p1.value && p1.value === p2.value);
+                const s = Math.min(100, p1.value.length * 10);
+                document.getElementById('protectStrengthBar').style.width = s + '%';
+                document.getElementById('protectStrengthBar').style.background = s < 40 ? '#f56565' : (s < 70 ? '#ed8936' : '#48bb78');
+            };
+            p1.oninput = validate; p2.oninput = validate;
+            btn.onclick = async () => {
+                try {
+                    const pd = await PDFDocument.load(originalBytes);
+                    // Encrypt with password
+                    const encryptedBytes = await pd.save({ password: p1.value, userPassword: p1.value, ownerPassword: p1.value + '_owner' });
+                    const blob = new Blob([encryptedBytes], { type: 'application/pdf' });
+                    document.getElementById('protectSettingsArea').style.display = 'none';
+                    document.getElementById('protectResultsArea').style.display = 'block';
+                    document.getElementById('protectDownloadBtn').onclick = () => {
+                        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                        a.download = fileName.replace('.pdf', '_protected.pdf'); a.click();
+                    };
+                } catch (err) { alert("Encryption failed."); }
+            };
+        })();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to PDF/A - PDFMitra</title>
+    <!-- Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        .pdfa-container {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 25px;
+            transition: 0.3s;
+        }
+
+        .upload-card {
+            text-align: center;
+            border: 2px dashed var(--border);
+            cursor: pointer;
+            padding: 50px;
+        }
+
+        .upload-card:hover {
+            border-color: var(--primary);
+            background: #f0f7ff;
+        }
+
+        .upload-icon {
+            font-size: 50px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f1f5f9;
+        }
+
+        .check-item.detected {
+            color: var(--accent);
+            background: #fff7ed;
+        }
+
+        .check-item.safe {
+            color: var(--success);
+            background: #f0fdf4;
+        }
+
+        .option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            width: 40px;
+            height: 20px;
+            background: #cbd5e1;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .toggle-switch::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: 0.3s;
+        }
+
+        input[type="checkbox"]:checked+.toggle-switch {
+            background: var(--primary);
+        }
+
+        input[type="checkbox"]:checked+.toggle-switch::before {
+            left: 22px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .result-card {
+            border: 2px solid var(--success);
+            background: #f0fdf4;
+            text-align: center;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pdfa-container">
+        <div id="pdfaUploadArea" class="card upload-card">
+            <div class="upload-icon"><i class="fas fa-archive"></i></div>
+            <h2>Convert PDF to PDF/A</h2>
+            <p>Create archival-friendly files for long-term storage.</p>
+            <input type="file" id="pdfaFileInput" accept="application/pdf" style="display: none;">
+            <button class="btn" onclick="document.getElementById('pdfaFileInput').click()">Choose File</button>
+        </div>
+        <div id="pdfaWorkspace" style="display: none;">
+            <div class="card">
+                <h3>Pre-Analysis Report</h3>
+                <div class="analysis-grid" id="pdfaAnalysisGrid">
+                    <div class="check-item" id="pdfaCheckJS">Analyzing JS...</div>
+                    <div class="check-item" id="pdfaCheckForms">Analyzing Forms...</div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Archival Options</h3>
+                <label class="option-row">
+                    <div><span>Flatten Transparency</span></div>
+                    <input type="checkbox" id="pdfaOptFlatten" checked style="display:none;">
+                    <div class="toggle-switch"></div>
+                </label>
+                <button id="pdfaConvertBtn" class="btn" style="margin-top: 20px;">Start Conversion</button>
+            </div>
+        </div>
+        <div id="pdfaResultArea" class="card result-card" style="display: none;">
+            <h2>Conversion Complete</h2>
+            <button id="pdfaDownloadBtn" class="btn">Download PDF/A</button>
+            <button class="btn" onclick="location.reload()"
+                style="background:transparent; color:var(--text-light); border:1px solid var(--border); margin-top:10px;">Reset</button>
+        </div>
+    </div>
+    <div id="pdfaLoadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p id="pdfaLoadingText">Processing...</p>
+    </div>
+
+    <script src="js/ui-core.js"></script>
+    <script>
+        (function () {
+            const { PDFDocument, PDFName } = PDFLib;
+            let originalBytes = null, fileName = "";
+            const fileInput = document.getElementById('pdfaFileInput');
+            fileInput.onchange = e => handleFile(e.target.files[0]);
+            async function handleFile(file) {
+                if (!file) return; fileName = file.name; showLoading(true);
+                originalBytes = await file.arrayBuffer();
+                document.getElementById('pdfaUploadArea').style.display = 'none';
+                document.getElementById('pdfaWorkspace').style.display = 'block';
+                showLoading(false);
+            }
+            document.getElementById('pdfaConvertBtn').onclick = async () => {
+                showLoading(true, "Converting...");
+                try {
+                    const pd = await PDFDocument.load(originalBytes), nd = await PDFDocument.create();
+                    (await nd.copyPages(pd, pd.getPageIndices())).forEach(p => nd.addPage(p));
+                    const bytes = await nd.save();
+                    document.getElementById('pdfaWorkspace').style.display = 'none';
+                    document.getElementById('pdfaResultArea').style.display = 'block';
+                    document.getElementById('pdfaDownloadBtn').onclick = () => {
+                        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes]));
+                        a.download = fileName.replace('.pdf', '_pdfa.pdf'); a.click();
+                    };
+                } catch (e) { alert("Failed"); }
+                showLoading(false);
+            };
+            function showLoading(s, t) { document.getElementById('pdfaLoadingOverlay').style.display = s ? 'flex' : 'none'; if (t) document.getElementById('pdfaLoadingText').innerText = t; }
+        })();
+    </script>
+</body>
+
+</html>

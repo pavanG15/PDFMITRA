@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Numbering - PDFMitra</title>
+    <!-- Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        .num-container {
+            max-width: 1400px;
+            margin: 60px auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .workspace {
+            display: none;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .pos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .pos-btn {
+            padding: 8px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .pos-btn.active {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .preview-pane {
+            background: #e2e8f0;
+            border-radius: 24px;
+            padding: 20px;
+            overflow: auto;
+            height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .preview-marker {
+            position: absolute;
+            background: rgba(0, 137, 123, 0.1);
+            border: 2px dashed var(--primary);
+            color: var(--primary);
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        .btn-apply {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            width: 100%;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="num-container">
+        <h1>Page Numbering</h1>
+        <div id="numDropZone" class="card" style="text-align:center; padding:60px;">
+            <i class="fas fa-file-upload" style="font-size:50px; color:var(--primary); margin-bottom:20px;"></i>
+            <button class="btn-apply" onclick="document.getElementById('numFileInput').click()">Choose PDF</button>
+            <input type="file" id="numFileInput" accept="application/pdf" style="display: none;">
+        </div>
+        <div class="workspace" id="numWorkspace">
+            <div class="sidebar">
+                <div class="card">
+                    <h4>Position</h4>
+                    <div class="pos-grid">
+                        <button class="pos-btn" onclick="setPos('TL')">TL</button><button class="pos-btn"
+                            onclick="setPos('TC')">TC</button><button class="pos-btn" onclick="setPos('TR')">TR</button>
+                        <button class="pos-btn" onclick="setPos('ML')">ML</button><button class="pos-btn"
+                            onclick="setPos('MC')">MC</button><button class="pos-btn" onclick="setPos('MR')">MR</button>
+                        <button class="pos-btn" onclick="setPos('BL')">BL</button><button class="pos-btn active"
+                            id="btnBC" onclick="setPos('BC')">BC</button><button class="pos-btn"
+                            onclick="setPos('BR')">BR</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>Style</h4>
+                    <input type="text" id="numFormat" value="Page {x} of {y}"
+                        style="width:100%; padding:10px; margin-bottom:10px;">
+                    <button class="btn-apply" id="numApplyBtn">Apply & Download</button>
+                </div>
+            </div>
+            <div class="preview-pane">
+                <canvas id="numCanvas" style="max-height:100%; background:white; box-shadow:var(--shadow);"></canvas>
+                <div id="numMarker" class="preview-marker">Page 1 of X</div>
+            </div>
+        </div>
+    </div>
+    <script src="js/ui-core.js"></script>
+    <script>
+        (function () {
+            const { PDFDocument, rgb, StandardFonts } = PDFLib;
+            let originalBytes = null, fileName = "", pos = "BC", total = 0, pW = 0, pH = 0;
+            const fileInput = document.getElementById('numFileInput');
+            fileInput.onchange = e => handleFile(e.target.files[0]);
+            async function handleFile(file) {
+                if (!file) return; fileName = file.name;
+                originalBytes = await file.arrayBuffer();
+                const pd = await PDFDocument.load(originalBytes.slice(0));
+                const page0 = pd.getPage(0); pW = page0.getWidth(); pH = page0.getHeight();
+                total = pd.getPageCount();
+                document.getElementById('numDropZone').style.display = 'none';
+                document.getElementById('numWorkspace').style.display = 'grid';
+                const pdf = await pdfjsLib.getDocument({ data: originalBytes.slice(0) }).promise;
+                const p = await pdf.getPage(1), vp = p.getViewport({ scale: 1.0 });
+                const c = document.getElementById('numCanvas'), cx = c.getContext('2d');
+                c.width = vp.width; c.height = vp.height; await p.render({ canvasContext: cx, viewport: vp }).promise;
+                updateMarker();
+            }
+            window.setPos = (p) => {
+                pos = p; document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
+                updateMarker();
+            };
+            function updateMarker() {
+                const m = document.getElementById('numMarker'), c = document.getElementById('numCanvas');
+                const sf = c.offsetWidth / pW;
+                const margin = 30 * sf;
+                if (pos.startsWith('T')) m.style.top = margin + 'px'; else if (pos.startsWith('M')) m.style.top = '50%'; else m.style.bottom = margin + 'px';
+                if (pos.endsWith('L')) m.style.left = margin + 'px'; else if (pos.endsWith('C')) m.style.left = '50%'; else m.style.right = margin + 'px';
+                if (pos.endsWith('C')) m.style.transform = 'translateX(-50%)'; else m.style.transform = 'none';
+                m.innerText = document.getElementById('numFormat').value.replace('{x}', 1).replace('{y}', total);
+            }
+            document.getElementById('numApplyBtn').onclick = async () => {
+                const pd = await PDFDocument.load(originalBytes), font = await pd.embedFont(StandardFonts.Helvetica);
+                const format = document.getElementById('numFormat').value;
+                pd.getPages().forEach((p, i) => {
+                    const txt = format.replace('{x}', i + 1).replace('{y}', total), tw = font.widthOfTextAtSize(txt, 12), { width: w, height: h } = p.getSize();
+                    let x, y, m = 30;
+                    if (pos.startsWith('T')) y = h - m - 12; else if (pos.startsWith('M')) y = h / 2; else y = m;
+                    if (pos.endsWith('L')) x = m; else if (pos.endsWith('C')) x = (w - tw) / 2; else x = w - m - tw;
+                    p.drawText(txt, { x, y, size: 12, font, color: rgb(0, 0, 0) });
+                });
+                const b = new Blob([await pd.save()], { type: 'application/pdf' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = fileName.replace('.pdf', '_numbered.pdf'); a.click();
+            };
+        })();
+    </script>
+</body>
+
+</html>

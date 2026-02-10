@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Us - PDFMitra</title>
+    <style>
+        .don-container {
+            max-width: 600px;
+            margin: 80px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .heart {
+            font-size: 64px;
+            color: var(--accent);
+            margin-bottom: 20px;
+            animation: hum 1.5s infinite;
+        }
+
+        @keyframes hum {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .card {
+            background: #fff;
+            padding: 40px;
+            border-radius: 32px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .btn {
+            display: block;
+            padding: 20px;
+            margin: 15px 0;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            text-decoration: none;
+            font-weight: 700;
+            color: var(--text-dark);
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            border-color: var(--primary);
+            background: #f0f9ff;
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="don-container">
+        <div class="heart"><i class="fas fa-heart"></i></div>
+        <h1>Support PDFMitra</h1>
+        <p style="color:var(--text-light); margin-bottom:40px;">We are dedicated to privacy. If you find our tools
+            helpful, please consider supporting us.</p>
+        <div class="card">
+            <a href="#" class="btn">$5 - "Buy us a Coffee"</a>
+            <a href="#" class="btn">$10 - "Privacy Supporter"</a>
+            <a href="#" class="btn">$25 - "Power User"</a>
+        </div>
+    </div>
+    <script src="js/ui-core.js"></script>
+</body>
+
+</html>

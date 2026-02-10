@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract PDF - PDFMitra</title>
+    <!-- Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        .extract-container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            border: 2px dashed var(--border);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        #thumbGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .page-card {
+            background: white;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: var(--shadow);
+            border: 2px solid transparent;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .page-card.selected {
+            border-color: var(--primary);
+            background: #f0f7ff;
+        }
+
+        .thumb-box {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .action-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 20px;
+            display: none;
+            justify-content: center;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-extract {
+            background: var(--primary);
+            color: white;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="extract-container">
+        <h1>Extract PDF Pages</h1>
+        <div id="extDropZone" class="upload-section" onclick="document.getElementById('extFileInput').click()">
+            <i class="fas fa-file-pdf" style="font-size:50px; color:var(--primary); margin-bottom:15px;"></i>
+            <h3>Select PDF to Extract Pages</h3>
+            <input type="file" id="extFileInput" accept="application/pdf" style="display: none;">
+        </div>
+        <div id="thumbGrid"></div>
+        <div class="action-footer" id="extFooter">
+            <button class="btn-extract" id="extBtn">Extract Selected Pages</button>
+        </div>
+    </div>
+    <script src="js/ui-core.js"></script>
+    <script>
+        (function () {
+            const { PDFDocument } = PDFLib;
+            let originalBytes = null, fileName = "", selected = new Set();
+            const fileInput = document.getElementById('extFileInput');
+            fileInput.onchange = e => handleFile(e.target.files[0]);
+            async function handleFile(file) {
+                if (!file) return; fileName = file.name;
+                originalBytes = await file.arrayBuffer();
+                document.getElementById('extDropZone').style.display = 'none';
+                document.getElementById('extFooter').style.display = 'flex';
+                const pdf = await pdfjsLib.getDocument({ data: originalBytes.slice(0) }).promise;
+                const grid = document.getElementById('thumbGrid'); grid.innerHTML = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i), vp = page.getViewport({ scale: 0.2 });
+                    const c = document.createElement('canvas'), cx = c.getContext('2d');
+                    c.width = vp.width; c.height = vp.height; await page.render({ canvasContext: cx, viewport: vp }).promise;
+                    const card = document.createElement('div'); card.className = 'page-card';
+                    card.innerHTML = `<div class="thumb-box"><img src="${c.toDataURL()}"></div><div style="margin-top:5px; font-weight:600;">Page ${i}</div>`;
+                    card.onclick = () => { if (selected.has(i - 1)) { selected.delete(i - 1); card.classList.remove('selected'); } else { selected.add(i - 1); card.classList.add('selected'); } };
+                    grid.appendChild(card);
+                }
+            }
+            document.getElementById('extBtn').onclick = async () => {
+                if (selected.size === 0) return alert("Select pages");
+                const pd = await PDFDocument.load(originalBytes), nd = await PDFDocument.create();
+                (await nd.copyPages(pd, [...selected].sort((a, b) => a - b))).forEach(p => nd.addPage(p));
+                const b = new Blob([await nd.save()], { type: 'application/pdf' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = fileName.replace('.pdf', '_extracted.pdf'); a.click();
+            };
+        })();
+    </script>
+</body>
+
+</html>

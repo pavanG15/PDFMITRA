@@ -1,0 +1,11 @@
+# Robots.txt for PDF MITRA
+# Allow all crawlers to index the site
+
+User-agent: *
+Allow: /
+
+# Disallow asset folder
+Disallow: /assets/
+
+# Sitemap location
+Sitemap: https://yourdomain.com/sitemap.xml

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - PDFMitra</title>
+    <style>
+        .about-container {
+            max-width: 900px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--primary);
+        }
+
+        .hero-p {
+            font-size: 20px;
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 60px;
+        }
+
+        .card {
+            background: #fff;
+            padding: 40px;
+            border-radius: 32px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .item {
+            padding: 25px;
+            background: white;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .item i {
+            font-size: 32px;
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+
+        p {
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="about-container">
+        <h1>Our Story</h1>
+        <p class="hero-p">Document management should be fast, free, and above all, private.</p>
+        <div class="card">
+            <h2 style="color:var(--primary); margin-bottom:20px;">The PDFMitra Mission</h2>
+            <p>PDFMitra was born out of a simple observation: Most PDF tools on the internet treat your data as a
+                commodity. They require you to upload your sensitive documents to their servers, where you lose control
+                over who sees them.</p>
+            <p>We built PDFMitra to change that. By using cutting-edge browser technologies, we've moved the entire
+                processing engine to your device. When you use our tools, your files never leave your computer.</p>
+        </div>
+        <div class="grid">
+            <div class="item"><i class="fas fa-user-shield"></i>
+                <h3>Privacy First</h3>
+                <p>No uploads. No cloud. Just local processing for ultimate security.</p>
+            </div>
+            <div class="item"><i class="fas fa-bolt"></i>
+                <h3>Lightning Fast</h3>
+                <p>No waiting for upload queues. Conversion happens instantly.</p>
+            </div>
+        </div>
+    </div>
+    <script src="js/ui-core.js"></script>
+</body>
+
+</html>

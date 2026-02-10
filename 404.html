@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | PDF MITRA</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #00897b;
+            --accent: #fb8c00;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .error-container {
+            text-align: center;
+            max-width: 600px;
+        }
+
+        .error-code {
+            font-size: 120px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+
+        .error-icon {
+            font-size: 80px;
+            color: var(--primary);
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        h1 {
+            font-size: 32px;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 18px;
+            color: var(--text-light);
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .btn-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--primary);
+            color: white;
+            padding: 15px 35px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-shadow: 0 10px 25px -5px rgba(0, 137, 123, 0.3);
+        }
+
+        .btn-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px -5px rgba(0, 137, 123, 0.4);
+        }
+
+        .btn-home:active {
+            transform: translateY(0);
+        }
+
+        .suggestions {
+            margin-top: 50px;
+            padding-top: 40px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .suggestions h3 {
+            font-size: 20px;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+
+        .suggestion-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .suggestion-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .suggestion-link:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 80px;
+            }
+
+            .error-icon {
+                font-size: 60px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            p {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-container">
+        <div class="error-icon">
+            <i class="fas fa-file-circle-question"></i>
+        </div>
+        <div class="error-code">404</div>
+        <h1>Oops! Page Not Found</h1>
+        <p>The page you're looking for seems to have wandered off. Don't worry, we'll help you get back on track!</p>
+
+        <a href="index.html" class="btn-home">
+            <i class="fas fa-home"></i>
+            <span>Go to Home</span>
+        </a>
+
+        <div class="suggestions">
+            <h3>Popular Tools</h3>
+            <div class="suggestion-links">
+                <a href="merge.html" class="suggestion-link">Merge PDF</a>
+                <a href="compress.html" class="suggestion-link">Compress PDF</a>
+                <a href="split.html" class="suggestion-link">Split PDF</a>
+                <a href="pdf-to-word.html" class="suggestion-link">PDF to Word</a>
+                <a href="scan.html" class="suggestion-link">Scan to PDF</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
