@@ -6,10 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watermark PDF - PDFMitra</title>
 
-    <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <!-- PDF Libraries -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -19,46 +15,49 @@
             font-family: 'Poppins', sans-serif;
             background: #f8fafc;
             margin: 0;
+            padding: 0;
         }
 
-        /* Page container */
+        /* Main layout container */
         .wm-page {
             max-width: 1400px;
             margin: 40px auto;
             padding: 20px;
         }
 
-        /* Grid layout */
+        /* Two column layout */
         .wm-container {
             display: grid;
             grid-template-columns: 360px 1fr;
             gap: 30px;
         }
 
-        /* Sidebar */
+        /* Sidebar styling */
         .sidebar {
-            background: #fff;
-            padding: 20px;
+            background: white;
+            padding: 22px;
             border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
             border: 1px solid #e2e8f0;
             height: fit-content;
         }
 
-        .sidebar h3 {
-            margin-bottom: 15px;
+        .sidebar label {
+            font-size: 14px;
+            font-weight: 600;
         }
 
         .sidebar input[type="text"],
         .sidebar input[type="range"] {
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
+            margin-top: 6px;
         }
 
-        /* Preview area */
+        /* Preview pane */
         .preview-pane {
             background: #e2e8f0;
-            border-radius: 24px;
+            border-radius: 22px;
             height: 700px;
             overflow: auto;
             padding: 20px;
@@ -66,28 +65,28 @@
             justify-content: center;
         }
 
-        /* Canvas wrapper */
+        /* Canvas container */
         .preview-wrapper {
-            background: #fff;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            background: white;
             position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         }
 
-        /* Marker text */
+        /* Watermark visual marker */
         .marker {
             position: absolute;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            color: #00897b;
             font-weight: 700;
-            opacity: 0.4;
+            opacity: 0.3;
+            color: #00897b;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
         }
 
         /* Upload overlay */
         .upload-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(248, 250, 252, 0.95);
+            background: rgba(248, 250, 252, 0.96);
             z-index: 2000;
             display: flex;
             align-items: center;
@@ -103,15 +102,22 @@
             cursor: pointer;
         }
 
+        .upload-box i {
+            font-size: 60px;
+            color: #00897b;
+            margin-bottom: 10px;
+        }
+
         .btn-main {
             background: #00897b;
             color: white;
-            padding: 12px 25px;
+            padding: 12px 28px;
             border-radius: 10px;
             border: none;
             cursor: pointer;
-            font-weight: 600;
+            font-size: 15px;
             margin-top: 10px;
+            font-weight: 600;
         }
 
         @media (max-width: 900px) {
@@ -120,7 +126,7 @@
             }
 
             .preview-pane {
-                height: 500px;
+                height: 480px;
             }
         }
     </style>
@@ -128,22 +134,23 @@
 
 <body>
 
-    <!-- Auto Navbar Loader -->
+    <!-- NAVBAR PLACEHOLDER (IMPORTANT) -->
+    <div id="navbar-container"></div>
+
+    <!-- Auto Inject Navbar -->
     <script src="js/ui-core.js"></script>
 
-    <!-- Upload Overlay -->
+    <!-- Upload Screen -->
     <div id="wmUpload" class="upload-overlay">
         <div class="upload-box" onclick="document.getElementById('wmFileInput').click()">
-            <div style="font-size:60px; color:#00897b;">
-                <i class="fas fa-stamp"></i>
-            </div>
+            <i class="fas fa-stamp"></i>
             <h2>Watermark PDF</h2>
             <button class="btn-main">Select PDF File</button>
             <input type="file" id="wmFileInput" accept="application/pdf" style="display:none;">
         </div>
     </div>
 
-    <!-- Main Layout -->
+    <!-- Main Page -->
     <div class="wm-page">
         <div class="wm-container">
 
@@ -166,48 +173,52 @@
                 <button class="btn-main" id="wmDownloadBtn">Download PDF</button>
             </div>
 
-            <!-- Preview -->
+            <!-- Preview Section -->
             <div class="preview-pane">
                 <div class="preview-wrapper" id="previewWrapper">
                     <canvas id="wmCanvas"></canvas>
-                    <div id="wmMarker" class="marker">WATERMARK</div>
+                    <div class="marker" id="wmMarker">WATERMARK</div>
                 </div>
             </div>
 
         </div>
     </div>
 
-    <!-- Watermark JS -->
+    <!-- Watermark Logic -->
     <script>
         (function () {
             const { PDFDocument, rgb, StandardFonts, degrees } = PDFLib;
 
-            let originalBytes = null, pdfDocJs = null, pW = 0, pH = 0;
+            let originalBytes = null,
+                pdfJsDoc = null,
+                pW = 0,
+                pH = 0;
 
             const canvas = document.getElementById("wmCanvas");
             const marker = document.getElementById("wmMarker");
             const wrapper = document.getElementById("previewWrapper");
 
-            // Upload PDF
+            /* Upload PDF */
             document.getElementById("wmFileInput").onchange = async e => {
                 const file = e.target.files[0];
                 if (!file) return;
 
                 originalBytes = await file.arrayBuffer();
-                pdfDocJs = await pdfjsLib.getDocument({ data: originalBytes }).promise;
+                pdfJsDoc = await pdfjsLib.getDocument({ data: originalBytes }).promise;
 
                 document.getElementById("wmUpload").style.display = "none";
 
                 await renderPDF();
             };
 
-            // Render first page
+            /* Render first page */
             async function renderPDF() {
-                const page = await pdfDocJs.getPage(1);
+                const page = await pdfJsDoc.getPage(1);
                 const viewport = page.getViewport({ scale: 1 });
 
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
+
                 pW = viewport.width;
                 pH = viewport.height;
 
@@ -222,43 +233,43 @@
                 updateMarker();
             }
 
-            // Update watermark preview
+            /* Update marker preview */
             function updateMarker() {
-                const txt = document.getElementById("wmText").value;
-                const op = document.getElementById("wmOpacity").value / 100;
-                const rot = document.getElementById("wmRotation").value;
-                const sc = document.getElementById("wmScale").value / 100;
+                const txt = wmText.value;
+                const op = wmOpacity.value / 100;
+                const rot = wmRotation.value;
+                const sc = wmScale.value / 100;
 
                 marker.innerText = txt;
                 marker.style.opacity = op;
                 marker.style.left = "50%";
                 marker.style.top = "50%";
                 marker.style.fontSize = (pW * 0.12) + "px";
-                marker.style.transform = `translate(-50%, -50%) rotate(${-rot}deg) scale(${sc})`;
+                marker.style.transform =
+                    `translate(-50%, -50%) rotate(${-rot}deg) scale(${sc})`;
             }
 
-            ["wmText", "wmOpacity", "wmRotation", "wmScale"].forEach(id => {
-                document.getElementById(id).oninput = updateMarker;
-            });
+            ["wmText", "wmOpacity", "wmRotation", "wmScale"]
+                .forEach(id => document.getElementById(id).oninput = updateMarker);
 
-            // Download new PDF
-            document.getElementById("wmDownloadBtn").onclick = async () => {
+            /* Download final PDF */
+            wmDownloadBtn.onclick = async () => {
                 const pdfDoc = await PDFDocument.load(originalBytes);
                 const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-                const txt = document.getElementById("wmText").value;
-                const op = document.getElementById("wmOpacity").value / 100;
-                const rot = document.getElementById("wmRotation").value;
-                const sc = document.getElementById("wmScale").value / 100;
+                const txt = wmText.value;
+                const op = wmOpacity.value / 100;
+                const rot = wmRotation.value;
+                const sc = wmScale.value / 100;
 
                 pdfDoc.getPages().forEach(page => {
                     const { width, height } = page.getSize();
                     const size = (width * 0.12) * sc;
 
                     page.drawText(txt, {
-                        x: width / 2 - (font.widthOfTextAtSize(txt, size) / 2),
+                        x: width / 2 - font.widthOfTextAtSize(txt, size) / 2,
                         y: height / 2,
-                        size,
+                        size: size,
                         font,
                         color: rgb(0.5, 0.5, 0.5),
                         opacity: op,
@@ -266,15 +277,17 @@
                     });
                 });
 
-                const pdfBytes = await pdfDoc.save();
-                const blob = new Blob([pdfBytes], { type: "application/pdf" });
+                const bytes = await pdfDoc.save();
+                const blob = new Blob([bytes], { type: "application/pdf" });
                 const a = document.createElement("a");
                 a.href = URL.createObjectURL(blob);
                 a.download = "watermarked.pdf";
                 a.click();
             };
+
         })();
     </script>
+
 </body>
 
 </html>
