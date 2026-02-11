@@ -1,5 +1,7 @@
-(function () {
+<body>
+    <script src="js/ui-core.js"></script>
 
+(function () {
     /* ------------------------------
        1) Inject Fonts + Global CSS
     ------------------------------ */
@@ -186,3 +188,4 @@
     }, 200);
 
 })();
+
