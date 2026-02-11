@@ -4,11 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watermark PDF - PDFMitra</title>
+    <title>Merge PDF - PDFMitra</title>
 
     <!-- PDF Libraries -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <style>
         body {
@@ -18,276 +17,171 @@
             padding: 0;
         }
 
-        /* Main layout container */
-        .wm-page {
-            max-width: 1400px;
+        .merge-page {
+            max-width: 1300px;
             margin: 40px auto;
             padding: 20px;
         }
 
-        /* Two column layout */
-        .wm-container {
-            display: grid;
-            grid-template-columns: 360px 1fr;
-            gap: 30px;
-        }
-
-        /* Sidebar styling */
-        .sidebar {
+        .merge-container {
             background: white;
-            padding: 22px;
-            border-radius: 20px;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
-            border: 1px solid #e2e8f0;
-            height: fit-content;
-        }
-
-        .sidebar label {
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .sidebar input[type="text"],
-        .sidebar input[type="range"] {
-            width: 100%;
-            margin-bottom: 16px;
-            margin-top: 6px;
-        }
-
-        /* Preview pane */
-        .preview-pane {
-            background: #e2e8f0;
+            padding: 30px;
             border-radius: 22px;
-            height: 700px;
-            overflow: auto;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
         }
 
-        /* Canvas container */
-        .preview-wrapper {
-            background: white;
-            position: relative;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        }
-
-        /* Watermark visual marker */
-        .marker {
-            position: absolute;
-            font-weight: 700;
-            opacity: 0.3;
-            color: #00897b;
-            pointer-events: none;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Upload overlay */
-        .upload-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(248, 250, 252, 0.96);
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
+        /* Upload Box */
         .upload-box {
-            background: white;
-            padding: 50px;
-            border-radius: 25px;
+            border: 3px dashed #00897b;
             text-align: center;
-            border: 3px dashed #e2e8f0;
+            padding: 40px;
+            border-radius: 22px;
             cursor: pointer;
+            background: #f0fdfa;
         }
 
         .upload-box i {
             font-size: 60px;
             color: #00897b;
-            margin-bottom: 10px;
         }
 
         .btn-main {
             background: #00897b;
             color: white;
             padding: 12px 28px;
-            border-radius: 10px;
             border: none;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 15px;
-            margin-top: 10px;
+            margin-top: 20px;
             font-weight: 600;
         }
 
-        @media (max-width: 900px) {
-            .wm-container {
-                grid-template-columns: 1fr;
-            }
+        /* File List */
+        .file-list {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
 
-            .preview-pane {
-                height: 480px;
-            }
+        .file-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item span {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .remove-btn {
+            color: #dc2626;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        @media (max-width: 786px) {
+            .merge-container { padding: 20px; }
+            .upload-box { padding: 30px; }
         }
     </style>
 </head>
 
 <body>
 
-    <!-- NAVBAR PLACEHOLDER (IMPORTANT) -->
+    <!-- Navbar Placeholder (IMPORTANT) -->
     <div id="navbar-container"></div>
 
-    <!-- Auto Inject Navbar -->
+    <!-- Navbar Loader -->
     <script src="js/ui-core.js"></script>
 
-    <!-- Upload Screen -->
-    <div id="wmUpload" class="upload-overlay">
-        <div class="upload-box" onclick="document.getElementById('wmFileInput').click()">
-            <i class="fas fa-stamp"></i>
-            <h2>Watermark PDF</h2>
-            <button class="btn-main">Select PDF File</button>
-            <input type="file" id="wmFileInput" accept="application/pdf" style="display:none;">
-        </div>
-    </div>
+    <div class="merge-page">
+        <div class="merge-container">
 
-    <!-- Main Page -->
-    <div class="wm-page">
-        <div class="wm-container">
-
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <h3>Settings</h3>
-
-                <label>Text Content</label>
-                <input type="text" id="wmText" value="WATERMARK">
-
-                <label>Opacity</label>
-                <input type="range" id="wmOpacity" min="10" max="100" value="30">
-
-                <label>Rotation</label>
-                <input type="range" id="wmRotation" min="-90" max="90" value="45">
-
-                <label>Scale</label>
-                <input type="range" id="wmScale" min="20" max="200" value="100">
-
-                <button class="btn-main" id="wmDownloadBtn">Download PDF</button>
+            <!-- Upload Box -->
+            <div class="upload-box" onclick="document.getElementById('mergeFiles').click()">
+                <i class="fas fa-file-pdf"></i>
+                <h2>Select PDF Files</h2>
+                <p>Click to upload or drag and drop</p>
+                <button class="btn-main">Choose Files</button>
+                <input id="mergeFiles" type="file" accept="application/pdf" multiple style="display:none;">
             </div>
 
-            <!-- Preview Section -->
-            <div class="preview-pane">
-                <div class="preview-wrapper" id="previewWrapper">
-                    <canvas id="wmCanvas"></canvas>
-                    <div class="marker" id="wmMarker">WATERMARK</div>
-                </div>
-            </div>
+            <!-- Selected Files -->
+            <div class="file-list" id="fileList"></div>
+
+            <!-- Merge Button -->
+            <button class="btn-main" id="mergeBtn" style="display:none;">Merge PDFs</button>
 
         </div>
     </div>
 
-    <!-- Watermark Logic -->
+    <!-- MERGE LOGIC -->
     <script>
-        (function () {
-            const { PDFDocument, rgb, StandardFonts, degrees } = PDFLib;
+        const fileInput = document.getElementById("mergeFiles");
+        const fileList = document.getElementById("fileList");
+        const mergeBtn = document.getElementById("mergeBtn");
 
-            let originalBytes = null,
-                pdfJsDoc = null,
-                pW = 0,
-                pH = 0;
+        let files = [];
 
-            const canvas = document.getElementById("wmCanvas");
-            const marker = document.getElementById("wmMarker");
-            const wrapper = document.getElementById("previewWrapper");
+        fileInput.onchange = e => {
+            files = [...e.target.files];
+            renderList();
+        };
 
-            /* Upload PDF */
-            document.getElementById("wmFileInput").onchange = async e => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                originalBytes = await file.arrayBuffer();
-                pdfJsDoc = await pdfjsLib.getDocument({ data: originalBytes }).promise;
-
-                document.getElementById("wmUpload").style.display = "none";
-
-                await renderPDF();
-            };
-
-            /* Render first page */
-            async function renderPDF() {
-                const page = await pdfJsDoc.getPage(1);
-                const viewport = page.getViewport({ scale: 1 });
-
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
-
-                pW = viewport.width;
-                pH = viewport.height;
-
-                wrapper.style.width = pW + "px";
-                wrapper.style.height = pH + "px";
-
-                await page.render({
-                    canvasContext: canvas.getContext("2d"),
-                    viewport
-                }).promise;
-
-                updateMarker();
+        function renderList() {
+            fileList.innerHTML = "";
+            if (files.length === 0) {
+                mergeBtn.style.display = "none";
+                return;
             }
 
-            /* Update marker preview */
-            function updateMarker() {
-                const txt = wmText.value;
-                const op = wmOpacity.value / 100;
-                const rot = wmRotation.value;
-                const sc = wmScale.value / 100;
+            files.forEach((file, index) => {
+                const div = document.createElement("div");
+                div.className = "file-item";
+                div.innerHTML = `
+                    <span>${file.name}</span>
+                    <span class="remove-btn" onclick="removeFile(${index})">Remove</span>
+                `;
+                fileList.appendChild(div);
+            });
 
-                marker.innerText = txt;
-                marker.style.opacity = op;
-                marker.style.left = "50%";
-                marker.style.top = "50%";
-                marker.style.fontSize = (pW * 0.12) + "px";
-                marker.style.transform =
-                    `translate(-50%, -50%) rotate(${-rot}deg) scale(${sc})`;
+            mergeBtn.style.display = "inline-block";
+        }
+
+        function removeFile(index) {
+            files.splice(index, 1);
+            renderList();
+        }
+
+        mergeBtn.onclick = async () => {
+            const mergedPdf = await PDFLib.PDFDocument.create();
+
+            for (let pdfFile of files) {
+                const bytes = await pdfFile.arrayBuffer();
+                const pdf = await PDFLib.PDFDocument.load(bytes);
+                const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                copiedPages.forEach(p => mergedPdf.addPage(p));
             }
 
-            ["wmText", "wmOpacity", "wmRotation", "wmScale"]
-                .forEach(id => document.getElementById(id).oninput = updateMarker);
-
-            /* Download final PDF */
-            wmDownloadBtn.onclick = async () => {
-                const pdfDoc = await PDFDocument.load(originalBytes);
-                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-                const txt = wmText.value;
-                const op = wmOpacity.value / 100;
-                const rot = wmRotation.value;
-                const sc = wmScale.value / 100;
-
-                pdfDoc.getPages().forEach(page => {
-                    const { width, height } = page.getSize();
-                    const size = (width * 0.12) * sc;
-
-                    page.drawText(txt, {
-                        x: width / 2 - font.widthOfTextAtSize(txt, size) / 2,
-                        y: height / 2,
-                        size: size,
-                        font,
-                        color: rgb(0.5, 0.5, 0.5),
-                        opacity: op,
-                        rotate: degrees(rot)
-                    });
-                });
-
-                const bytes = await pdfDoc.save();
-                const blob = new Blob([bytes], { type: "application/pdf" });
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
-                a.download = "watermarked.pdf";
-                a.click();
-            };
-
-        })();
+            const mergedBytes = await mergedPdf.save();
+            const blob = new Blob([mergedBytes], { type: "application/pdf" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "merged.pdf";
+            a.click();
+        };
     </script>
 
-</body>
+    <!-- Icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 
+</body>
 </html>
