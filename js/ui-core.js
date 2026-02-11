@@ -1,34 +1,13 @@
-/**
- * PDFMitra UI Core
- * Automatically injects the shared Navbar and Footer into standalone pages.
- */
-
 (function () {
-    // 1. Determine base path relative to the root (where index.html sits)
-    const scripts = document.getElementsByTagName('script');
-    let basePath = './';
-    for (let i = 0; i < scripts.length; i++) {
-        if (scripts[i].src.endsWith('ui-core.js')) {
-            const pathParts = scripts[i].src.split('/');
-            // If the script is in /js/, the root is one level up from /js/
-            const jsIndex = pathParts.indexOf('js');
-            if (jsIndex > -1) {
-                // This is a bit complex for file:// - let's simplify for this project structure
-                // Assuming script is included as src="js/ui-core.js" or "../js/ui-core.js"
-            }
-        }
-    }
 
-    // SIMPLIFIED PATH DETECTION for PDFMitra
-    // If we are in /blog/article-1.html, we need ../
-    const isSubdir = window.location.pathname.includes('/blog/');
-    const relPath = isSubdir ? '../' : './';
-
-    // 2. Inject Styles and Fonts
+    /* ------------------------------
+       1) Inject Fonts + Global CSS
+    ------------------------------ */
     const head = document.head;
-    const links = `
+    head.insertAdjacentHTML("beforeend", `
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
         <style>
             :root {
                 --primary: #00897b;
@@ -37,195 +16,173 @@
                 --bg: #f8fafc;
                 --text-dark: #1f2937;
                 --text-light: #64748b;
-                --card-bg: rgba(255, 255, 255, 0.95);
                 --border: #e2e8f0;
-                --shadow: 0 4px 20px -5px rgba(0, 137, 123, 0.1);
-                --glass: rgba(255, 255, 255, 0.8);
             }
-            body { 
-                margin: 0; 
-                font-family: 'Poppins', sans-serif; 
-                background: 
-                    radial-gradient(at 0% 0%, rgba(0, 137, 123, 0.05) 0px, transparent 50%),
-                    radial-gradient(at 100% 0%, rgba(251, 140, 0, 0.05) 0px, transparent 50%),
-                    radial-gradient(at 100% 100%, rgba(0, 137, 123, 0.05) 0px, transparent 50%),
-                    radial-gradient(at 0% 100%, rgba(251, 140, 0, 0.05) 0px, transparent 50%),
-                    linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%);
-                background-attachment: fixed;
-                color: var(--text-dark);
-                display: flex;
-                flex-direction: column;
-                min-height: 100vh;
+
+            body {
+                margin: 0;
+                font-family: "Poppins", sans-serif;
             }
-            /* Glassmorphism for main containers */
-            .tool-container, .index-container, .about-container, .priv-container, .don-container, .cmp-container, .unlock-container, .protect-container, .crop-container, .wm-container {
-                background: var(--glass) !important;
+
+            /* NAVBAR */
+            .navbar {
+                background: rgba(255,255,255,0.97) !important;
                 backdrop-filter: blur(12px);
                 -webkit-backdrop-filter: blur(12px);
-                border: 1px solid rgba(255, 255, 255, 0.4);
-                border-radius: 24px;
-                padding: 25px !important;
-                margin-top: 20px !important;
-                margin-bottom: 20px !important;
-                box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
-            }
-            .navbar {
-                background: rgba(255, 255, 255, 0.9);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                padding: 10px 30px;
+                padding: 14px 28px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
                 position: sticky;
                 top: 0;
-                z-index: 1000;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+                z-index: 2000;
+                border-bottom: 1px solid rgba(0,0,0,0.05);
             }
+
             .logo {
                 font-size: 24px;
+                text-decoration: none;
                 font-weight: 700;
                 color: var(--text-dark);
                 display: flex;
                 align-items: center;
-                gap: 10px;
-                text-decoration: none;
+                gap: 8px;
             }
-            .logo-icon { color: var(--primary); font-size: 28px; }
-            .logo .mitra { color: var(--accent); }
-            .nav-links { display: flex; gap: 20px; }
-            .nav-links a { text-decoration: none; color: var(--text-dark); font-weight: 500; font-size: 14px; transition: color 0.3s; }
-            .nav-links a:hover { color: var(--primary); }
-            
-            .nav-search-wrapper { position: relative; flex: 1; max-width: 250px; display: flex; align-items: center; margin: 0 15px; }
-            .nav-search-input { 
-                width: 100%; 
-                padding: 7px 12px 7px 32px; 
-                border-radius: 8px; 
-                border: 1.5px solid var(--primary); 
-                background: rgba(255, 255, 255, 0.9);
-                font-size: 13px; 
-                font-weight: 500;
-                box-shadow: 0 2px 6px rgba(0, 137, 123, 0.05);
-                transition: all 0.3s;
-            }
-            .nav-search-input:focus {
-                outline: none;
-                border-color: var(--accent);
-                box-shadow: 0 0 0 3px rgba(251, 140, 0, 0.1);
-            }
-            .nav-search-icon { position: absolute; left: 10px; color: var(--primary); font-size: 11px; }
 
-            /* Mobile Menu Toggle */
+            .logo-icon { color: var(--primary); font-size: 28px; }
+            .mitra { color: var(--accent); }
+
+            .nav-search-wrapper {
+                position: relative;
+                width: 260px;
+            }
+
+            .nav-search-input {
+                width: 100%;
+                padding: 8px 12px 8px 34px;
+                border-radius: 8px;
+                border: 2px solid var(--primary);
+                background: white;
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            .nav-search-icon {
+                position: absolute;
+                left: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--primary);
+                font-size: 12px;
+            }
+
+            .nav-links {
+                display: flex;
+                gap: 22px;
+            }
+            .nav-links a {
+                text-decoration: none;
+                color: var(--text-dark);
+                font-weight: 600;
+                font-size: 14px;
+            }
+            .nav-links a:hover {
+                color: var(--primary);
+            }
+
+            /* MOBILE NAV */
             .mobile-menu-toggle {
                 display: none;
                 background: none;
                 border: none;
-                font-size: 24px;
+                font-size: 26px;
                 color: var(--primary);
-                cursor: pointer;
-                padding: 8px;
             }
 
-            @media (max-width: 768px) {
-                .navbar { 
-                    padding: 12px 15px; 
-                    flex-wrap: wrap;
-                    gap: 12px;
-                }
-                .logo { font-size: 22px; }
-                .logo-icon { font-size: 26px; }
-                
-                /* Show hamburger menu on mobile */
-                .mobile-menu-toggle {
-                    display: block;
-                }
-                
-                /* Hide nav links by default on mobile */
-                .nav-links { 
+            @media(max-width:768px) {
+                .nav-search-wrapper { display:none; }
+                .mobile-menu-toggle { display:block; }
+
+                .nav-links {
                     display: none;
                     flex-direction: column;
-                    width: 100%;
-                    order: 4;
-                    gap: 0;
                     background: white;
+                    width: 100%;
+                    margin-top: 10px;
+                    border-radius: 10px;
                     padding: 10px 0;
-                    border-radius: 12px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                 }
-                
-                /* Show nav links when active */
-                .nav-links.active {
-                    display: flex;
-                }
-                
+
                 .nav-links a {
                     padding: 12px 20px;
                     border-bottom: 1px solid var(--border);
                 }
-                
-                .nav-links a:last-child {
-                    border-bottom: none;
-                }
-                
-                .nav-search-wrapper { 
-                    flex: 1 1 100%;
-                    max-width: 100%;
-                    margin: 0;
-                    order: 3;
-                }
-                .nav-search-input {
-                    padding: 12px 12px 12px 40px;
-                    font-size: 15px;
-                }
+                .nav-links a:last-child { border-bottom: none; }
+
+                .nav-links.active { display: flex; }
             }
         </style>
+    `);
+
+
+    /* ------------------------------
+       2) Determine folder depth
+    ------------------------------ */
+    const page = window.location.pathname;
+    let base = "./";
+
+    if (page.includes("/blog/")) base = "../";
+    if (page.includes("/numbering") || page.includes("/watermark") || page.includes("/merge") || page.includes("/compress"))
+        base = "./";
+
+
+    /* ------------------------------
+       3) Inject NAVBAR into placeholder
+    ------------------------------ */
+    const navbar = `
+        <nav class="navbar">
+            <a href="${base}index.html" class="logo">
+                <i class="fas fa-file-pdf logo-icon"></i>
+                PDF<span class="mitra">Mitra</span>
+            </a>
+
+            <div class="nav-search-wrapper">
+                <i class="fas fa-search nav-search-icon"></i>
+                <input type="text" class="nav-search-input" placeholder="Quick find tools..."
+                    onkeyup="if(event.key === 'Enter') window.location.href='${base}index.html?search=' + this.value">
+            </div>
+
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div class="nav-links" id="navLinks">
+                <a href="${base}index.html">All Tools</a>
+                <a href="${base}about.html">About Us</a>
+                <a href="${base}blog/index.html">Blog</a>
+                <a href="${base}donate.html">Donate</a>
+            </div>
+        </nav>
     `;
-    head.insertAdjacentHTML('beforeend', links);
 
-    // 3. Inject Navbar
-    if (!document.querySelector('.navbar')) {
-        const navbarHTML = `
-            <nav class="navbar">
-                <a href="${relPath}index.html" class="logo">
-                    <i class="fas fa-hands-helping logo-icon"></i>
-                    <div>PDF<span class="mitra">Mitra</span></div>
-                </a>
-                <div class="nav-search-wrapper">
-                    <i class="fas fa-search nav-search-icon"></i>
-                    <input type="text" class="nav-search-input" placeholder="Quick find tools..." 
-                        onkeyup="if(event.key === 'Enter') window.location.href='${relPath}index.html?search=' + encodeURIComponent(this.value)">
-                </div>
-                <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div class="nav-links" id="navLinks">
-                    <a href="${relPath}index.html">All Tools</a>
-                    <a href="${relPath}about.html">About Us</a>
-                    <a href="${relPath}blog/index.html">Blog</a>
-                    <a href="${relPath}donate.html">Donate</a>
-                </div>
-            </nav>
-        `;
-        document.body.insertAdjacentHTML('afterbegin', navbarHTML);
+    const place = document.getElementById("navbar-container");
+    if (place) place.innerHTML = navbar;
 
-        // Mobile menu toggle functionality
-        setTimeout(() => {
-            const menuToggle = document.getElementById('mobileMenuToggle');
-            const navLinks = document.getElementById('navLinks');
+    /* ------------------------------
+       4) Mobile Menu Toggle
+    ------------------------------ */
+    setTimeout(() => {
+        let toggle = document.getElementById("mobileMenuToggle");
+        let links = document.getElementById("navLinks");
 
-            if (menuToggle && navLinks) {
-                menuToggle.addEventListener('click', () => {
-                    navLinks.classList.toggle('active');
-                    const icon = menuToggle.querySelector('i');
-                    if (navLinks.classList.contains('active')) {
-                        icon.className = 'fas fa-times';
-                    } else {
-                        icon.className = 'fas fa-bars';
-                    }
-                });
-            }
-        }, 100);
-    }
+        if (toggle && links) {
+            toggle.addEventListener("click", () => {
+                links.classList.toggle("active");
+                toggle.innerHTML = links.classList.contains("active") ?
+                    '<i class="fas fa-times"></i>' :
+                    '<i class="fas fa-bars"></i>';
+            });
+        }
+    }, 200);
+
 })();
