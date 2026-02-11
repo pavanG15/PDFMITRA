@@ -2,183 +2,279 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Merge PDF - PDFMitra</title>
-  <!-- Libraries -->
-  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-  <style>
-    .merge-container {
-      flex: 1;
-      max-width: 900px;
-      margin: 60px auto;
-      padding: 0 20px;
-      text-align: center;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watermark PDF - PDFMitra</title>
 
-    .card {
-      background: #fff;
-      padding: 40px;
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    .card h1 {
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
+    <!-- PDF Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-    .card p {
-      color: var(--text-light);
-      margin-bottom: 30px;
-    }
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f8fafc;
+            margin: 0;
+        }
 
-    .upload-box {
-      border: 2px dashed var(--primary);
-      padding: 30px;
-      border-radius: 16px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      transition: all 0.3s;
-    }
+        /* Page container */
+        .wm-page {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 20px;
+        }
 
-    .upload-box:hover {
-      background: rgba(0, 137, 123, 0.05);
-    }
+        /* Grid layout */
+        .wm-container {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 30px;
+        }
 
-    .upload-box span {
-      color: var(--primary);
-      font-weight: 700;
-    }
+        /* Sidebar */
+        .sidebar {
+            background: #fff;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+            height: fit-content;
+        }
 
-    #pdfFiles {
-      display: none;
-    }
+        .sidebar h3 {
+            margin-bottom: 15px;
+        }
 
-    .file-list {
-      margin-top: 30px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 20px;
-    }
+        .sidebar input[type="text"],
+        .sidebar input[type="range"] {
+            width: 100%;
+            margin-bottom: 15px;
+        }
 
-    .file-item {
-      background: #f9fafb;
-      padding: 15px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-    }
+        /* Preview area */
+        .preview-pane {
+            background: #e2e8f0;
+            border-radius: 24px;
+            height: 700px;
+            overflow: auto;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
 
-    .file-item canvas {
-      width: 100%;
-      border-radius: 4px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      margin-bottom: 10px;
-    }
+        /* Canvas wrapper */
+        .preview-wrapper {
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            position: relative;
+        }
 
-    .file-name {
-      font-size: 13px;
-      font-weight: 600;
-      word-break: break-all;
-      margin-bottom: 10px;
-    }
+        /* Marker text */
+        .marker {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            color: #00897b;
+            font-weight: 700;
+            opacity: 0.4;
+        }
 
-    .remove-btn {
-      background: #ef4444;
-      color: white;
-      border: none;
-      padding: 5px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-    }
+        /* Upload overlay */
+        .upload-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(248, 250, 252, 0.95);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    .btn-primary {
-      margin-top: 30px;
-      padding: 15px 40px;
-      border-radius: 50px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 10px 15px -3px rgba(0, 137, 123, 0.3);
-    }
-  </style>
+        .upload-box {
+            background: white;
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            border: 3px dashed #e2e8f0;
+            cursor: pointer;
+        }
+
+        .btn-main {
+            background: #00897b;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .wm-container {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-pane {
+                height: 500px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-  <main class="merge-container">
-    <div class="card">
-      <h1>Merge PDF</h1>
-      <p>Combine multiple PDF files into one unified document.</p>
-      <label class="upload-box">
-        <input type="file" id="pdfFiles" accept="application/pdf" multiple onchange="handleFiles()">
-        <span><i class="fas fa-file-pdf"></i> Choose PDF Files</span>
-      </label>
-      <div class="file-list" id="fileList"></div>
-      <button class="btn-primary" onclick="mergePDFs()">Merge & Download PDF</button>
-    </div>
-  </main>
 
-  <script src="js/ui-core.js"></script>
-  <script>
-    (function () {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      let selectedFiles = [];
-      window.handleFiles = async function () {
-        const files = document.getElementById("pdfFiles").files;
-        selectedFiles = [...selectedFiles, ...Array.from(files)];
-        renderList();
-      }
-      async function renderList() {
-        const list = document.getElementById("fileList");
-        list.innerHTML = "";
-        for (let i = 0; i < selectedFiles.length; i++) {
-          const file = selectedFiles[i];
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-          try {
-            const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-            const page = await pdf.getPage(1);
-            const vp = page.getViewport({ scale: 0.3 });
-            canvas.width = vp.width;
-            canvas.height = vp.height;
-            await page.render({ canvasContext: ctx, viewport: vp }).promise;
-          } catch (e) { console.error(e); }
-          const div = document.createElement("div");
-          div.className = "file-item";
-          div.innerHTML = `<div class="file-name">${file.name}</div><button class="remove-btn" onclick="removeFile(${i})">Remove</button>`;
-          div.prepend(canvas);
-          list.appendChild(div);
-        }
-      }
-      window.removeFile = function (i) { selectedFiles.splice(i, 1); renderList(); }
-      window.mergePDFs = async function () {
-        if (selectedFiles.length < 2) { alert("Please select at least 2 PDF files"); return; }
-        try {
-          const mergedPdf = await PDFLib.PDFDocument.create();
-          for (const file of selectedFiles) {
-            const bytes = await file.arrayBuffer();
-            const pdf = await PDFLib.PDFDocument.load(bytes);
-            const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-            pages.forEach(p => mergedPdf.addPage(p));
-          }
-          const mergedBytes = await mergedPdf.save();
-          const blob = new Blob([mergedBytes], { type: "application/pdf" });
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "merged.pdf";
-          a.click();
-        } catch (err) { alert("Merge error: " + err.message); }
-      }
-    })();
-  </script>
+    <!-- Auto Navbar Loader -->
+    <script src="js/ui-core.js"></script>
+
+    <!-- Upload Overlay -->
+    <div id="wmUpload" class="upload-overlay">
+        <div class="upload-box" onclick="document.getElementById('wmFileInput').click()">
+            <div style="font-size:60px; color:#00897b;">
+                <i class="fas fa-stamp"></i>
+            </div>
+            <h2>Watermark PDF</h2>
+            <button class="btn-main">Select PDF File</button>
+            <input type="file" id="wmFileInput" accept="application/pdf" style="display:none;">
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="wm-page">
+        <div class="wm-container">
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <h3>Settings</h3>
+
+                <label>Text Content</label>
+                <input type="text" id="wmText" value="WATERMARK">
+
+                <label>Opacity</label>
+                <input type="range" id="wmOpacity" min="10" max="100" value="30">
+
+                <label>Rotation</label>
+                <input type="range" id="wmRotation" min="-90" max="90" value="45">
+
+                <label>Scale</label>
+                <input type="range" id="wmScale" min="20" max="200" value="100">
+
+                <button class="btn-main" id="wmDownloadBtn">Download PDF</button>
+            </div>
+
+            <!-- Preview -->
+            <div class="preview-pane">
+                <div class="preview-wrapper" id="previewWrapper">
+                    <canvas id="wmCanvas"></canvas>
+                    <div id="wmMarker" class="marker">WATERMARK</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Watermark JS -->
+    <script>
+        (function () {
+            const { PDFDocument, rgb, StandardFonts, degrees } = PDFLib;
+
+            let originalBytes = null, pdfDocJs = null, pW = 0, pH = 0;
+
+            const canvas = document.getElementById("wmCanvas");
+            const marker = document.getElementById("wmMarker");
+            const wrapper = document.getElementById("previewWrapper");
+
+            // Upload PDF
+            document.getElementById("wmFileInput").onchange = async e => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                originalBytes = await file.arrayBuffer();
+                pdfDocJs = await pdfjsLib.getDocument({ data: originalBytes }).promise;
+
+                document.getElementById("wmUpload").style.display = "none";
+
+                await renderPDF();
+            };
+
+            // Render first page
+            async function renderPDF() {
+                const page = await pdfDocJs.getPage(1);
+                const viewport = page.getViewport({ scale: 1 });
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                pW = viewport.width;
+                pH = viewport.height;
+
+                wrapper.style.width = pW + "px";
+                wrapper.style.height = pH + "px";
+
+                await page.render({
+                    canvasContext: canvas.getContext("2d"),
+                    viewport
+                }).promise;
+
+                updateMarker();
+            }
+
+            // Update watermark preview
+            function updateMarker() {
+                const txt = document.getElementById("wmText").value;
+                const op = document.getElementById("wmOpacity").value / 100;
+                const rot = document.getElementById("wmRotation").value;
+                const sc = document.getElementById("wmScale").value / 100;
+
+                marker.innerText = txt;
+                marker.style.opacity = op;
+                marker.style.left = "50%";
+                marker.style.top = "50%";
+                marker.style.fontSize = (pW * 0.12) + "px";
+                marker.style.transform = `translate(-50%, -50%) rotate(${-rot}deg) scale(${sc})`;
+            }
+
+            ["wmText", "wmOpacity", "wmRotation", "wmScale"].forEach(id => {
+                document.getElementById(id).oninput = updateMarker;
+            });
+
+            // Download new PDF
+            document.getElementById("wmDownloadBtn").onclick = async () => {
+                const pdfDoc = await PDFDocument.load(originalBytes);
+                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+                const txt = document.getElementById("wmText").value;
+                const op = document.getElementById("wmOpacity").value / 100;
+                const rot = document.getElementById("wmRotation").value;
+                const sc = document.getElementById("wmScale").value / 100;
+
+                pdfDoc.getPages().forEach(page => {
+                    const { width, height } = page.getSize();
+                    const size = (width * 0.12) * sc;
+
+                    page.drawText(txt, {
+                        x: width / 2 - (font.widthOfTextAtSize(txt, size) / 2),
+                        y: height / 2,
+                        size,
+                        font,
+                        color: rgb(0.5, 0.5, 0.5),
+                        opacity: op,
+                        rotate: degrees(rot)
+                    });
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: "application/pdf" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "watermarked.pdf";
+                a.click();
+            };
+        })();
+    </script>
 </body>
 
 </html>
